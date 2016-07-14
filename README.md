@@ -54,10 +54,15 @@ client attempts to open an OOB socket.
 In order for a client to use a given ragent server, the entity they use must
 have been given permission to use the ragent. This takes the form of a DOT
 granted from the server VK to the client VK (directly, with no intermediaries)
-granting any permissions on the URI "ragent/1.0/full". We may later add finer
-grained permissions on API versions greater than 1.0. Any revocations or
-expiries of the DOT or either VK will invalidate the permissions and future
-connections will be refused.
+granting any permissions on the URI "ragent/1.0/full". e.g
+
+```
+  bw2 mkd -f server.ent -t clientVK -u ragent/1.0/full
+```
+
+We may later add finer grained permissions on API versions greater than 1.0.
+Any revocations or expiries of the DOT or either VK will invalidate the
+permissions and future connections will be refused.
 
 # Small print
 
