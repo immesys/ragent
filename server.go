@@ -91,7 +91,7 @@ func doserver(serverEntityFile string, listenAddr string, agentaddr string) {
 		fmt.Printf("Could not parse certificate\n")
 		os.Exit(1)
 	}
-	crypto.SignBlob(ourEntity.GetSK(), ourEntity.GetVK(), proof[32:], cert2.Signature)
+	crypto.SignBlob(ourEntity.GetSK(), ourEntity.GetVK(), proof[32:], cert2.Raw)
 	for {
 		conn, err := ln.Accept()
 		fmt.Println("accepted connection from", conn.RemoteAddr())

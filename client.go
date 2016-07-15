@@ -57,7 +57,7 @@ func proxyclient(lconn net.Conn, remote, remotevk string) {
 	if err != nil {
 		panic("failed to read proof: " + err.Error())
 	}
-	proofOK := crypto.VerifyBlob(proof[:32], proof[32:], cs.PeerCertificates[0].Signature)
+	proofOK := crypto.VerifyBlob(proof[:32], proof[32:], cs.PeerCertificates[0].Raw)
 	if !proofOK {
 		panic("peer verification failed")
 	}
