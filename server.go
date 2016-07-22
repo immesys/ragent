@@ -173,11 +173,13 @@ func isVKAllowed(vk []byte, cl *bw2bind.BW2Client) bool {
 	if err != nil {
 		panic(err)
 	}
+	everyone, _ := crypto.UnFmtKey("----EqP__WY477nofMYUz2MNFBsfa5IK_RBlRvKptDY=")
 	for idx, d := range dots {
 		if validities[idx] != bw2bind.StateValid {
 			continue
 		}
-		if bytes.Equal(d.GetReceiverVK(), vk) && d.GetAccessURISuffix() == "1.0/full" {
+		if (bytes.Equal(d.GetReceiverVK(), vk) ||
+			bytes.Equal(d.GetReceiverVK(), everyone)) && d.GetAccessURISuffix() == "1.0/full" {
 			return true
 		}
 	}
