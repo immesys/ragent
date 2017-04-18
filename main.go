@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"os"
+
+	"github.com/immesys/ragent/ragentlib"
 )
 
 /*
@@ -33,7 +35,7 @@ func main() {
 		if len(os.Args) != 6 {
 			usage()
 		}
-		doclient(os.Args[2], os.Args[3], os.Args[4], os.Args[5])
+		ragentlib.DoClient(os.Args[2], os.Args[3], os.Args[4], os.Args[5])
 	} else {
 		usage()
 	}

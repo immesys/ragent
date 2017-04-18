@@ -67,6 +67,10 @@ var ourEntity *objects.Entity
 
 func doserver(serverEntityFile string, listenAddr string, agentaddr string) {
 	cl := bw2bind.ConnectOrExit(agentaddr)
+    maxage := int64(60*60*5)
+    cl.SetBCInteractionParams(&bw2bind.BCIP{
+        Maxage: &maxage,
+    })
 	econtents, err := ioutil.ReadFile(serverEntityFile)
 	if err != nil {
 		panic(err)
