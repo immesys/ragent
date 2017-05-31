@@ -181,8 +181,8 @@ func copysimplex(desc string, a, b net.Conn, sigdone chan struct{}) {
 			return
 		}
 		total += count
-		if time.Now().Sub(last) > 5*time.Second {
-			fmt.Println(desc, total, "bytes")
+		if time.Now().Sub(last) > 15*time.Second {
+			fmt.Println(desc, total, "bytes transferred")
 			last = time.Now()
 		}
 	}
