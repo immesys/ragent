@@ -85,8 +85,10 @@ func proxyclient(lconn net.Conn, remote, remotevk string) {
 		panic(state)
 	}
 	fmt.Println("remote sent OKAY, beginning relay")
-	go copysimplex("remote->local", conn, lconn)
-	copysimplex("local->remote", lconn, conn)
+	sigdone := make(chan struct{})
+	go copysimplex("remote->local", conn, lconn, sigdone)
+	go copysimplex("local->remote", lconn, conn, sigdone)
+	<-sigdone
 	fmt.Println("relay terminated")
 	lconn.Close()
 	conn.Close()

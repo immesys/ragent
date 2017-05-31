@@ -67,10 +67,10 @@ var ourEntity *objects.Entity
 
 func doserver(serverEntityFile string, listenAddr string, agentaddr string) {
 	cl := bw2bind.ConnectOrExit(agentaddr)
-    maxage := int64(60*60*5)
-    cl.SetBCInteractionParams(&bw2bind.BCIP{
-        Maxage: &maxage,
-    })
+	maxage := int64(60 * 60 * 5)
+	cl.SetBCInteractionParams(&bw2bind.BCIP{
+		Maxage: &maxage,
+	})
 	econtents, err := ioutil.ReadFile(serverEntityFile)
 	if err != nil {
 		panic(err)
@@ -154,27 +154,36 @@ func handleSession(conn net.Conn, globalcl *bw2bind.BW2Client, agentaddr string)
 		panic(err)
 	}
 	fmt.Println("beginning relay: ", conn.RemoteAddr())
-	go copysimplex("local->remote", acon, conn)
-	copysimplex("remote->local", conn, acon)
+	sigdone := make(chan struct{})
+	go copysimplex("local->remote", acon, conn, sigdone)
+	go copysimplex("remote->local", conn, acon, sigdone)
 
 	fmt.Println("relay terminated: ", conn.RemoteAddr())
 	acon.Close()
 	conn.Close()
 }
 
-func copysimplex(desc string, a, b net.Conn) {
+func copysimplex(desc string, a, b net.Conn, sigdone chan struct{}) {
 	total := 0
 	last := time.Now()
 	buf := make([]byte, 4096)
+
 	for {
 		count, err := a.Read(buf)
 		if count == 0 || err != nil {
-			break
+			close(sigdone)
+			return
 		}
-		b.Write(buf[:count])
+		b.SetWriteDeadline(time.Now().Add(2 * time.Minute))
+		_, err = b.Write(buf[:count])
+		if err != nil {
+			close(sigdone)
+			return
+		}
 		total += count
 		if time.Now().Sub(last) > 5*time.Second {
 			fmt.Println(desc, total, "bytes")
+			last = time.Now()
 		}
 	}
 }
@@ -184,9 +193,13 @@ func isVKAllowed(vk []byte, cl *bw2bind.BW2Client) bool {
 	if err != nil {
 		panic(err)
 	}
+	ragentns, _ := crypto.UnFmtKey("wosINCusN4my0IT-PbWHOUPuPngbkwik_u-xJG9a7tA=")
 	everyone, _ := crypto.UnFmtKey("----EqP__WY477nofMYUz2MNFBsfa5IK_RBlRvKptDY=")
 	for idx, d := range dots {
 		if validities[idx] != bw2bind.StateValid {
+			continue
+		}
+		if !bytes.Equal(d.GetAccessURIMVK(), ragentns) {
 			continue
 		}
 		if (bytes.Equal(d.GetReceiverVK(), vk) ||
