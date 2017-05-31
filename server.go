@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/tls"
@@ -154,16 +155,16 @@ func handleSession(conn net.Conn, globalcl *bw2bind.BW2Client, agentaddr string)
 		panic(err)
 	}
 	fmt.Println("beginning relay: ", conn.RemoteAddr())
-	sigdone := make(chan struct{})
-	go copysimplex("local->remote", acon, conn, sigdone)
-	go copysimplex("remote->local", conn, acon, sigdone)
-
+	ctx, cancel := context.WithCancel(context.Background())
+	go copysimplex("local->remote", acon, conn, cancel)
+	go copysimplex("remote->local", conn, acon, cancel)
+	<-ctx.Done()
 	fmt.Println("relay terminated: ", conn.RemoteAddr())
 	acon.Close()
 	conn.Close()
 }
 
-func copysimplex(desc string, a, b net.Conn, sigdone chan struct{}) {
+func copysimplex(desc string, a, b net.Conn, cancel func()) {
 	total := 0
 	last := time.Now()
 	buf := make([]byte, 4096)
@@ -171,13 +172,15 @@ func copysimplex(desc string, a, b net.Conn, sigdone chan struct{}) {
 	for {
 		count, err := a.Read(buf)
 		if count == 0 || err != nil {
-			close(sigdone)
+			fmt.Printf("read error: %v\n", err)
+			cancel()
 			return
 		}
 		b.SetWriteDeadline(time.Now().Add(2 * time.Minute))
 		_, err = b.Write(buf[:count])
 		if err != nil {
-			close(sigdone)
+			fmt.Printf("write error: %v\n", err)
+			cancel()
 			return
 		}
 		total += count

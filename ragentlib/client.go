@@ -2,6 +2,7 @@ package ragentlib
 
 import (
 	"bytes"
+	"context"
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
@@ -107,16 +108,16 @@ func proxyclient(lconn net.Conn, remote, remotevk string) {
 		panic(state)
 	}
 	fmt.Println("remote sent OKAY, beginning relay")
-	sigdone := make(chan struct{})
-	go copysimplex("remote->local", conn, lconn, sigdone)
-	go copysimplex("local->remote", lconn, conn, sigdone)
-	<-sigdone
+	ctx, cancel := context.WithCancel(context.Background())
+	go copysimplex("remote->local", conn, lconn, cancel)
+	go copysimplex("local->remote", lconn, conn, cancel)
+	<-ctx.Done()
 	fmt.Println("relay terminated")
 	lconn.Close()
 	conn.Close()
 }
 
-func copysimplex(desc string, a, b net.Conn, sigdone chan struct{}) {
+func copysimplex(desc string, a, b net.Conn, cancel func()) {
 	total := 0
 	last := time.Now()
 	buf := make([]byte, 4096)
@@ -124,13 +125,15 @@ func copysimplex(desc string, a, b net.Conn, sigdone chan struct{}) {
 	for {
 		count, err := a.Read(buf)
 		if count == 0 || err != nil {
-			close(sigdone)
+			fmt.Printf("read error: %v\n", err)
+			cancel()
 			return
 		}
 		b.SetWriteDeadline(time.Now().Add(2 * time.Minute))
 		_, err = b.Write(buf[:count])
 		if err != nil {
-			close(sigdone)
+			fmt.Printf("write error: %v\n", err)
+			cancel()
 			return
 		}
 		total += count
