@@ -9,8 +9,10 @@ import (
 	"io"
 	"io/ioutil"
 	"net"
+	"os"
 	"time"
 
+	"github.com/fatih/color"
 	"github.com/immesys/bw2/crypto"
 	"github.com/immesys/bw2/objects"
 )
@@ -42,13 +44,16 @@ func DoClient(relayEntityFile string, remote string, remotevk string, listenaddr
 }
 func DoClientER(econtents []byte, remote string, remotevk string, listenaddr string) {
 	enti, err := objects.NewEntity(objects.ROEntityWKey, econtents[1:])
+	errc := color.New(color.FgRed, color.Bold)
 	if err != nil {
-		panic(err)
+		errc.Printf("invalid auth: %s\n", err)
+		os.Exit(1)
 	}
 	ourEntity = enti.(*objects.Entity)
 	ln, err := net.Listen("tcp", listenaddr)
 	if err != nil {
-		panic(err)
+		errc.Printf("could not connect to init ragent client: %s\n", err)
+		os.Exit(1)
 	}
 	for {
 		conn, err := ln.Accept()
@@ -60,16 +65,19 @@ func DoClientER(econtents []byte, remote string, remotevk string, listenaddr str
 }
 func proxyclient(lconn net.Conn, remote, remotevk string) {
 	roots := x509.NewCertPool()
+	errc := color.New(color.FgRed, color.Bold)
 	conn, err := tls.Dial("tcp", remote, &tls.Config{
 		InsecureSkipVerify: true,
 		RootCAs:            roots,
 	})
 	if err != nil {
-		panic(err)
+		errc.Printf("bosswave connection error: %s\n", err)
+		os.Exit(1)
 	}
 	expectedVK, err := crypto.UnFmtKey(remotevk)
 	if err != nil {
-		panic(err)
+		errc.Printf("handshake error error : %s\n", err)
+		os.Exit(1)
 	}
 	cs := conn.ConnectionState()
 	if len(cs.PeerCertificates) != 1 {
