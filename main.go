@@ -15,6 +15,7 @@ import (
  client will now forward all traffic to the local agent
 */
 func main() {
+	fmt.Printf("ragent 2.0\n")
 	usage := func() {
 		fmt.Println(`BOSSWAVE Remote Agent Relay`)
 		fmt.Println(` server mode (accept TLS and relay to OOB):`)
@@ -30,6 +31,7 @@ func main() {
 		if len(os.Args) != 5 {
 			usage()
 		}
+		go doheartbeat()
 		doserver(os.Args[2], os.Args[3], os.Args[4])
 	} else if os.Args[1] == "client" {
 		if len(os.Args) != 6 {

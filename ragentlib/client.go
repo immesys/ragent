@@ -59,6 +59,7 @@ func DoClientER(econtents []byte, remote string, remotevk string, listenaddr str
 	}
 }
 func proxyclient(lconn net.Conn, remote, remotevk string) {
+	fmt.Printf("trying connection to %s\n", remote)
 	roots := x509.NewCertPool()
 	conn, err := tls.Dial("tcp", remote, &tls.Config{
 		InsecureSkipVerify: true,
@@ -76,6 +77,7 @@ func proxyclient(lconn net.Conn, remote, remotevk string) {
 		panic("peer gave no certs")
 	}
 	proof := make([]byte, 96)
+	fmt.Printf("starting to wait for proof\n")
 	_, err = io.ReadFull(conn, proof)
 	if err != nil {
 		panic("failed to read proof: " + err.Error())
